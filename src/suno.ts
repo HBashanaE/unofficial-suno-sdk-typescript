@@ -1,3 +1,5 @@
+import { join, resolve } from "path";
+import { createWriteStream, existsSync, mkdirSync } from "fs";
 import axios from "axios";
 
 import {
@@ -116,6 +118,14 @@ export default class Suno {
     return lastClips;
   }
 
+  private getDownloadPath(id: string, downloadPath: string): string {
+    const outputDir = resolve(downloadPath);
+    if (!existsSync(outputDir)) {
+      mkdirSync(outputDir, { recursive: true });
+    }
+    return join(outputDir, `SunoMusic-${id}.mp3`);
+  }
+
   async getCredits() {
     await this.keepAlive();
     const response = await this.client.get(`${this.baseUrl}/api/billing/info/`);
@@ -189,5 +199,40 @@ export default class Suno {
       this.checkError(response);
       return response.data;
     }
+  }
+
+  async download(
+    songId: string,
+    downloadPath: string = "./downloads"
+  ): Promise<string> {
+    const url = (await this.getSong(songId)).audio_url;
+
+    const response = await this.client.get(url, { responseType: "stream" });
+    const filePath = this.getDownloadPath(songId, downloadPath);
+    const writer = createWriteStream(filePath);
+
+    return new Promise((resolve, reject) => {
+      response.data.pipe(writer);
+      let error: Error | null = null;
+      writer.on("error", (err) => {
+        error = err;
+        writer.close();
+        reject(err);
+      });
+      writer.on("close", () => {
+        if (!error) {
+          resolve(filePath);
+        }
+      });
+    });
+  }
+
+  async getSong(id: string) {
+    await this.keepAlive();
+    const response = await this.client.get(
+      `${this.baseUrl}/api/feed/?ids=${id}`
+    );
+    this.checkError(response);
+    return response.data[0];
   }
 }
