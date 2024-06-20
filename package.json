@@ -5,7 +5,7 @@
   "main": "dist/index.js",
   "scripts": {
     "build": "tsc",
-    "dev": "ts-node src/index.ts"
+    "doc": "typedoc src/index.ts"
   },
   "author": "HBashanaE",
   "license": "ISC",
@@ -21,6 +21,7 @@
     "eslint-plugin-n": "^15.0.0",
     "eslint-plugin-promise": "^6.0.0",
     "ts-node": "^10.9.1",
+    "typedoc": "^0.25.13",
     "typescript": "*"
   }
 }
